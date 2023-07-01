@@ -1,0 +1,190 @@
+                                                   SWIGGY DATASET ANALYSIS USING SQL
+
+
+
+
+1 find customers who has never ordered 
+
+    select USER_ID from users
+    where user_id not in (select user_id from orders)
+
+
+
+2 average price/dish 
+
+    select f.f_id,f.f_name,avg(m.price) avg_price  from food f
+    join menu m 
+    on f.f_id=m.f_id
+    group by f.f_id,f.f_name
+
+
+
+3 find top restaurant in terms of number of order for a given month 
+
+
+   -- july month top restaurants in terms of orders 
+     
+     select o.r_id,count(od.f_id) Total_Orders ,r.r_name from order_details od 
+     join orders o on
+     o.order_id=od.order_id
+     join restaurants r 
+     on r.r_id=o.r_id
+     where MONTH(date)=7
+     group by o.r_id,r.r_name
+     order by Total_Orders desc
+
+
+
+4 reataurant with monthly sales > x 
+   lets say x=1000
+
+
+          select r.r_id,r.r_name,sum(o.amount) as total_monthly_sales   from orders o 
+          Join restaurants r
+          on r.r_id=o.r_id
+          where MONTH(date)=7
+          group by r.r_id,r.r_name
+          having sum(o.amount) > 1000
+
+
+
+5  show all orders with order details for a particular customer in a particular data range 
+
+
+        select o.user_id,o.r_id,od.f_id,o.date,o.amount from orders o 
+        join order_details od 
+        on o.order_id=od.order_id
+        where o.user_id = (select user_id from users where name like 'bideesha')
+        and o.date > '2022-10-14' and o.date < '2022-12-05'
+
+
+
+
+6 find restaurants with max repeated customers
+
+       
+       select o.user_id, o.r_id,count(o.r_id) orders_from_paticular_restaurant    
+       ,r.r_name 
+       from orders o
+       join restaurants r on 
+       o.r_id=r.r_id
+       group by o.user_id,o.r_id,r.r_name
+       order by orders_from_paticular_restaurant desc 
+ 
+
+
+
+7 list of customer and their favorite food 
+
+
+  with cte as (
+   select u.name , o.user_id  ,count(od.f_id) total_orders ,f.f_name  from orders o 
+   join order_details od
+   on o.order_id=od.order_id
+   join food f
+   on f.f_id=od.f_id
+   join users u 
+   on u.user_id=o.user_id 
+   group by u.name, o.user_id,f.f_id,f.f_name
+                  )
+
+
+  select * from cte c1 
+  where total_orders= (select max(total_orders) from cte c2  
+                      where c2.user_id=c1.user_id)
+  order by c1.user_id,total_orders desc
+					  
+
+
+8 find most loyal customers for all restaurant 
+
+  
+       select o.user_id, o.r_id,count(o.r_id) orders_from_paticular_restaurant    
+       ,r.r_name 
+       from orders o
+       join restaurants r on 
+       o.r_id=r.r_id
+       group by o.user_id,o.r_id,r.r_name
+       order by orders_from_paticular_restaurant desc 
+
+
+
+9 average rating of a restaurant 
+
+ 
+      select o.r_id,avg(o.restaurant_rating) as avg_restaurant_rating  from orders o
+      join restaurants r 
+      on o.r_id=o.r_id
+      group by o.r_id
+
+
+
+10 average rating of delivery guy (highest)
+
+
+      select o.partner_id,dp.partner_name,avg(o.delivery_rating) average_delivery_rating from orders o 
+      join delivery_patner dp 
+      on o.partner_id=dp.partner_id
+      group by o.partner_id,dp.partner_name
+      order by avg(o.delivery_rating) desc
+
+
+
+11 total orders before and after gold membership 
+   and total amount spent before and after 
+
+
+      select o.user_id,sum(o.amount) total_amount_spent_after_membership from orders o 
+      join membership m 
+      on o.user_id=m.user_id
+      where o.date > m.membership_signup_date
+      group by o.user_id
+
+     select o.user_id,sum(o.amount) total_amount_before_membership from orders o 
+     join membership m 
+     on o.user_id=m.user_id
+     where o.date < m.membership_signup_date
+     group by o.user_id 
+
+
+12 which delivery guy as picked up most orders 
+
+
+     select partner_id,count(*) total_orders_delivered from orders
+     group by partner_id 
+     order by count(*) desc
+
+
+13 Which food item has been ordered the most across all restaurants?
+
+  
+    select od.f_id,f.f_name,count(*) total_orders from orders o
+    join order_details od
+    on o.order_id=od.order_id
+    join food f 
+    on f.f_id=od.f_id
+    group by od.f_id,f.f_name
+    order by count(*) desc
+
+
+ 14 Among all the restaurants, among veg and non-veg types of pizzas which is preferred more?
+
+
+    select o.r_id,f.f_name,f.f_id,count(*) total_pizza_orders from orders o
+    join order_details od
+    on o.order_id=od.order_id
+    join food f 
+    on f.f_id=od.f_id
+    where f.f_name like '%pizza'
+    group by f.f_name,o.r_id,f.f_id
+
+
+
+
+
+
+
+
+
+
+
